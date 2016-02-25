@@ -175,25 +175,57 @@ AccountsTemplates.configureRoute = function(route, options) {
     //
     // For now we need to render the main template using BlazeToReact
 
-    if (Package['react-runtime']) {
-      var React = Package['react-runtime'].React;
-    } else {
-      throw new Error("layoutTemplate is a React element but React runtime package is not found");
-    }
+    var React = require('react');
+    var ReactDOM = require('react-dom');
+    var ReactLayout = {render: require('react-mounter').mount};
+    var AsReactComponent = function (template) {
+      // create and return a new React component
+      return React.createClass({
 
-    if (Package['kadira:react-layout']) {
-      var ReactLayout = Package['kadira:react-layout'].ReactLayout;
-    } else {
-      throw new Error("useraccounts:flow-routing requires that your project includes kadira:react-layout package.");
-    }
+        // Leave full control to Blaze once component is in use
+        shouldComponentUpdate: function() {
+          return false;
+        },
 
-    if (Package['gwendall:blaze-to-react']) {
-      var BlazeToReact = Package['gwendall:blaze-to-react'].BlazeToReact;
-    } else {
-      throw new Error("useraccounts:flow-routing requires that your project includes the gwendall:blaze-to-react package.");
-    }
+        // append props to templates data
+        componentWillReceiveProps: function(props) {
+          _.extend(this.blazeView.dataVar.curValue, props);
+          // signal tracker
+          this.blazeView.dataVar.dep.changed();
+        },
 
-    layoutRegions[contentRegion] = React.createElement(BlazeToReact, { blazeTemplate: template });
+        // insert this component to DOM
+        componentDidMount: function() {
+          var componentNode = ReactDOM.findDOMNode(this);
+          // get name of template from method call or template property
+          template = template || this.props.template;
+          // check for existing template
+          if (template && Template[template]) {
+            // save successfull rendered view
+            this.setState({ blazeView: Blaze.renderWithData(Template[template], this.props, componentNode) });
+          } else {
+            // drop an error
+            throw new Meteor.Error("Template.ToReact", "Template " + template + "is missing.");
+          }
+        },
+
+        // check to remove view from Blaze if was created
+        componentWillUnmount: function() {
+          if (this.state.blazeView) {
+            Blaze.remove(this.state.blazeView);
+            // unset state
+            this.setState({ blazeView: undefined });
+          }
+        },
+
+        // simple render this component
+        render: function() {
+          return React.createElement("div", null);
+        }
+      });
+    };
+
+    layoutRegions[contentRegion] = React.createElement(AsReactComponent(template));
   }
 
   function doLayout() {

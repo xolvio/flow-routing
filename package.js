@@ -21,6 +21,7 @@ Package.onUse(function(api) {
     'kadira:flow-router',
     'underscore',
     'useraccounts:core',
+    'ecmascript',
   ], ['client', 'server']);
 
   api.imply([
@@ -29,14 +30,12 @@ Package.onUse(function(api) {
   ], ['client', 'server']);
 
   api.use([
-     'react@0.14.1_1',
+     'react-meteor-data',
      'kadira:blaze-layout@2.3.0',
-     'kadira:react-layout@1.5.2',
-     'gwendall:blaze-to-react@0.1.2'
   ], ['client', 'server'], { weak: true });
 
   api.addFiles([
-    'lib/core.js',
+    'lib/core.jsx',
   ], ['client', 'server']);
 
   api.addFiles([
